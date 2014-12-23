@@ -7,7 +7,8 @@ BASE_URL = 'http://www.omdbapi.com/?'
 movie_name = "The Shawshank Redemption"
 query = {'i': '', 't': movie_name ,'tomatoes':'true'}
 response = requests.get(BASE_URL+urllib.urlencode(query))
-output = json.dumps(response.content, separators=(',',':'))
+print response.content
+output = json.loads(response.content)
 
 
 movie_detail = {}

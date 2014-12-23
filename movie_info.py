@@ -17,7 +17,8 @@ counter = 0
 with open(raw_file) as f:
     moviename = f.readlines()
     for movie in moviename:
-        out_file.write(movie.split('|')[0] + "\n")
+        print movie
+        out_file.write(movie.split('|')[0]+ "\n")
         counter = counter + 1
 
 out_file.close()
