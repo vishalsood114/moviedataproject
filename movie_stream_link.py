@@ -1,4 +1,5 @@
 import os
+import io
 import time
 import json
 from sys import argv
@@ -6,7 +7,7 @@ from os.path import exists
 from urllib2 import urlopen
 
 
-script, raw_file, to_file = argv
+script, raw_file, to_file, json_file = argv
 
 
 BASE_URL = "http://www.canistream.it/search/movie/"
@@ -19,6 +20,7 @@ else:
     sys.exit(0)
 
 out_file = open(to_file, 'w')
+json_file = open(json_file, 'w')
 counter = 0
 
 
@@ -58,11 +60,15 @@ def get_rt_link(html,start_search_from):
     	rt_link = html[start_rt_link + 6:end_rt_link]
     	return rt_link, end_rt_link
 
-
+movie_price_list =[]
 with open(raw_file) as f:
     moviename = f.readlines()
-    for movie in moviename:
+    for movienid in moviename:
+        movie_dict = {}
+        movie = movienid.split('|')[1]
         print "Reading Movie: " + movie
+        movie_dict["imdbID"] = movienid.split('|')[0]
+        movie_dict["nameMovie"] = movie 
         out_file.write("\n"+ movie)
         out_file.write("----------------------------------------------------" + "\n")
         query_url = movie.replace(' ','%20')
@@ -72,14 +78,18 @@ with open(raw_file) as f:
         if not movieid:
             continue
         out_file.write("MovieId : " + movieid + "\n")
+        movie_dict["CanMovieId"] = movieid
+        movie_dict["CanMovieLink"] = canis_link
         if canis_link:
 	    out_file.write ("Canistream.it link : " + canis_link + "\n")
+
         
 	imdb_link, end_imdb_link = get_imdb_link(html,end_canis_link)
         if imdb_link: 
 	    out_file.write("IMDB Link: " + imdb_link + "\n")
 
 	rt_link, end_rt_link = get_rt_link(html,end_imdb_link)
+        movie_dict["rtLink"] = rt_link
 	if rt_link:
             out_file.write("Rotten Tomato Link: " + rt_link + "\n")
 
@@ -89,15 +99,23 @@ with open(raw_file) as f:
 	PART_URL = "&attributes=1&mediaType="
 
 	for s in streaming_types:
-	    FINAL_URL=PRICE_URL+movieid+PART_URL+s
+	    sLink = s + "Link"
+            FINAL_URL=PRICE_URL+movieid+PART_URL+s
+            movie_dict[sLink]= FINAL_URL
 	    out_file.write("\n" +FINAL_URL + "\n")
 	    data = urlopen(FINAL_URL).read()
-	    if data != '[]':
+	    movie_dict[s]=json.loads(data)
+            if data != '[]':
 		price_data = json.loads(urlopen(FINAL_URL).read())
 		json.dump(price_data,out_file)
+        
+        movie_price_list.append(movie_dict)
         counter = counter + 1
 
+json.dump(movie_price_list,json_file)
+json_file.close()
 out_file.close()
 
+#print movie_price_list
 print counter
 
